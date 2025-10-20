@@ -105,19 +105,17 @@ try {
     # -------------------------------------------------------------------------------------
     # Django Database Setup (fully automated)
     # -------------------------------------------------------------------------------------
+
+    # 1. Apply Django migrations first
     Write-Host "Applying Django migrations..." -ForegroundColor Yellow
     Invoke-Expression "$dockerComposeCmd exec backend python manage.py makemigrations --noinput"
     Invoke-Expression "$dockerComposeCmd exec backend python manage.py migrate --noinput"
 
+    # 2. Ensure admin superuser exists after migrations
     Write-Host "Ensuring admin superuser exists..." -ForegroundColor Yellow
     $composeParts = $dockerComposeCmd -split ' '
-    & $composeParts[0] $composeParts[1] exec backend python manage.py shell -c `
-        "from django.contrib.auth.models import User;
-u, created = User.objects.get_or_create(username='admin');
-u.set_password('admin123');
-u.is_superuser=True;
-u.is_staff=True;
-u.save()"
+    & $composeParts[0] $composeParts[1] exec backend python manage.py shell -c "from django.contrib.auth.models import User; u, created = User.objects.get_or_create(username='admin'); u.set_password('admin123'); u.is_superuser = True; u.is_staff = True; u.save()"
+
     # -------------------------------------------------------------------------------------
 
     Write-Host ""

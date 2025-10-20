@@ -21,6 +21,11 @@ from core.views import health_check
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", health_check, name="health"),
-    path("api/", include("apps.cars.urls")),  # 👈 add this line
-
+    
+     # API routes
+    path("api/", include("apps.cars.urls")),    
+    path("api/", include("apps.accounts.urls")),
+    path("api/", include("apps.policies.urls")),
+    path("api/", include("apps.claims.urls")),
+    
 ]

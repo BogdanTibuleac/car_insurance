@@ -6,3 +6,5 @@ structlog==24.1.0
 psycopg2-binary==2.9.9
 drf-spectacular==0.27.1
 APScheduler==3.10.4
+djangorestframework-simplejwt==5.3.1
+drf-nested-routers
