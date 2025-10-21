@@ -9,6 +9,9 @@ import os
 import environ
 from pathlib import Path
 from datetime import timedelta
+import structlog
+import logging
+# ---------------------------------------------------------------------------
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +41,7 @@ INSTALLED_APPS = [
     "apps.cars",
     "apps.policies",
     "apps.claims",
+    "core",
     "apps.accounts.apps.AccountsConfig",
 ]
 
@@ -120,7 +124,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # Internationalization
 # ---------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+
+# Time zone and scheduler
+TIME_ZONE = env.str("TIME_ZONE", default="Europe/Bucharest")
+SCHEDULER_ENABLED = env.bool("SCHEDULER_ENABLED", default=False)
+LOG_LEVEL = env.str("LOG_LEVEL", default="INFO")
 USE_I18N = True
 USE_TZ = True
 
@@ -149,4 +157,66 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# ---------------------------------------------------------------------------
+# Structured Logging (structlog)
+# ---------------------------------------------------------------------------
+
+numeric_log_level = logging._nameToLevel.get(LOG_LEVEL, logging.INFO)
+
+ENV = env.str("ENV", default="dev")
+
+shared_processors = [
+    structlog.contextvars.merge_contextvars,
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.stdlib.add_log_level,
+    structlog.stdlib.PositionalArgumentsFormatter(),
+    structlog.processors.StackInfoRenderer(),
+    structlog.processors.format_exc_info,
+]
+
+if ENV == "prod":
+    processors = shared_processors + [
+        structlog.processors.JSONRenderer(),
+    ]
+else:
+    processors = shared_processors + [
+        structlog.dev.ConsoleRenderer(colors=True),
+    ]
+
+structlog.configure(
+    processors=processors,
+    wrapper_class=structlog.make_filtering_bound_logger(numeric_log_level),
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "structlog_json": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": structlog.processors.JSONRenderer(),
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "structlog_json",   # ✅ no trailing comma here
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": LOG_LEVEL,
+    },
+    "loggers": {
+        "django.server": {                   # ✅ formats Django's access logs
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+    },
 }
