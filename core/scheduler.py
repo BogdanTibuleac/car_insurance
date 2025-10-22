@@ -26,6 +26,8 @@ def log_policy_expirations():
         )
         for policy in expiring_policies:
             InsuranceExpiryLog.objects.create(policy=policy, logged_at=now())
+            policy.logged_expiry_at = now()
+            policy.save(update_fields=['logged_expiry_at'])
             logger.info(f"Logged expiration for InsurancePolicy id={policy.id} for car {policy.car.id}.")
     logger.info("Policy expiry job completed.")
     
