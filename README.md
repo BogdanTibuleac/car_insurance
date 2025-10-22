@@ -1,8 +1,7 @@
-
 # 🚗 Car Insurance API (Django + Docker)
 
 A modular backend system for managing car insurance data — built with **Django REST Framework**, **PostgreSQL**, **Redis**, and **Docker**.  
-It provides endpoints for owners, cars, insurance policies, claims, and history tracking.
+It provides endpoints for cars, insurance policies, claims, and history tracking, including background scheduling, structured logging, and automated testing.
 
 ---
 
@@ -11,56 +10,60 @@ It provides endpoints for owners, cars, insurance policies, claims, and history 
 | Layer | Technology |
 |-------|-------------|
 | **Backend Framework** | Django 5 + Django REST Framework |
-| **Database** | PostgreSQL (via Docker Compose) |
-| **Cache / Task Queue** | Redis |
-| **Email Testing** | MailHog |
+| **Database** | PostgreSQL |
+| **Cache / Broker** | Redis |
+| **Task Scheduling** | APScheduler |
+| **Logging** | structlog (JSON logging in production) |
+| **Testing** | pytest + pytest-django + coverage |
 | **Containerization** | Docker + Docker Compose |
 | **Automation** | PowerShell scripts (`scripts/setup/*.ps1`) |
 
 ---
 
-### 🗂 Project Structure
+## 🗂 Project Structure
 
 ```
 
-car_insurance/
-├── apps/                     # Domain apps (cars, owners, policies, etc.)
-├── core/                     # Cross-cutting utilities (health checks, tasks)
-├── car_insurance/            # Django project config (settings, urls)
-├── scripts/                  # PowerShell utilities
+car_insurance_backend/
+├── apps/
+│   ├── accounts/               # User registration (Django built-in User)
+│   ├── cars/                   # Vehicle management
+│   ├── claims/                 # Insurance claims endpoints
+│   ├── policies/               # Policies, validity, and expiry tracking
+│   └── **init**.py
+│
+├── core/
+│   ├── scheduler.py            # APScheduler background job (policy expiry)
+│   ├── management/
+│   │   └── commands/
+│   │       └── seed.py         # Seed DB with factory_boy + Faker mock data
+│   └── apps.py
+│
+├── car_insurance/
+│   ├── settings.py             # Django + structlog configuration
+│   ├── urls.py                 # Global API routing
+│   └── wsgi.py
+│
+├── scripts/
 │   ├── setup/
-│   │   ├── run.ps1           # Full environment setup
-│   │   ├── db.ps1            # Database maintenance script
-│   ├── cleanup.ps1           # Remove all containers & volumes
-│   └── seed.ps1              # (Optional) Seed sample data
-├── Dockerfile                # Backend image definition
-├── docker-compose.yml        # Full stack (Django + Postgres + Redis + MailHog)
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (ignored in Git)
-└── README.md
+│   │   ├── run.ps1             # Start + build full Docker environment
+│   │   ├── db.ps1              # Manage migrations / database
+│   ├── cleanup.ps1             # Remove containers & volumes
+│   ├── seed.ps1                # Seed mock data via Django command
+│   └── scheduler.ps1           # Run APScheduler manually (optional)
+│
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── pytest.ini
+├── README.md
+└── .env
 
 ````
 
 ---
 
-## 🧰 Prerequisites
-
-Ensure the following are installed and running:
-
-- **Docker Desktop** or **Rancher Desktop**  
-  (Enable Docker socket exposure if using Rancher)
-- **PowerShell** (Windows or cross-platform)
-- **Ports availability:**
-  - `8000` → Django
-  - `5432` → PostgreSQL
-  - `6379` → Redis
-  - `8025` → MailHog
-
----
-
-## ⚙️ Configuration
-
-Create a `.env` file in the project root:
+## ⚙️ Environment Configuration (`.env`)
 
 ```ini
 # Security
@@ -68,212 +71,144 @@ SECRET_KEY=supersecretkey
 DEBUG=True
 
 # Database
-POSTGRES_DB=
+POSTGRES_DB=car_insurance
 POSTGRES_USER=
 POSTGRES_PASSWORD=
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 
-# Cache / Broker
+# Redis / Cache
 REDIS_URL=redis://redis:6379/1
 
-# Networking
-ALLOWED_HOSTS=localhost,127.0.0.1
+# Time zone
+TIME_ZONE=Europe/Bucharest
+
+# Scheduler
+SCHEDULER_ENABLED=True
+
+# Logging
+ENV=dev
+LOG_LEVEL=INFO
 ````
 
 ---
 
-## 🚀 Getting Started
+## 🧰 Commands
 
-To build and start the full environment:
+### 🔧 Setup and Run
 
 ```powershell
 .\scripts\setup\run.ps1
 ```
 
-This script will:
+Or manually:
 
-1. Build Docker images
-2. Start PostgreSQL, Redis, and MailHog
-3. Run migrations and apply schema updates
-4. Automatically create an admin user
-5. Start Django at [http://localhost:8000](http://localhost:8000)
-
-**Admin credentials:**
-
+```bash
+docker compose up --build
 ```
-username: admin
-password: admin123
+
+**Access Django API:**
+👉 [http://localhost:8000](http://localhost:8000)
+
+---
+
+### 🗄️ Database Access
+
+```bash
+docker exec -it car_insurance_db psql -U car_admin -d car_insurance
+```
+
+Inside psql:
+
+```sql
+\dt       -- list tables
+SELECT * FROM cars;
 ```
 
 ---
 
-## 🩺 Health Check
+### 🧾 Logs
 
-Visit:
+View live backend logs:
 
+```bash
+docker compose logs -f backend
 ```
-http://localhost:8000/health
-```
 
-Expected response:
+**Logging behavior:**
 
-```json
-{
-  "status": "ok",
-  "database": "ok",
-  "cache": "ok"
-}
-```
+* In **development (ENV=dev)** → human-readable colored console logs.
+* In **production (ENV=prod)** → structured JSON logs (machine-readable, ready for observability tools).
 
 ---
 
-## 🧠 API Example – Cars
+### 🧩 Django Management Commands
 
-| Method   | Endpoint          | Description    |
-| -------- | ----------------- | -------------- |
-| `GET`    | `/api/cars/`      | List cars      |
-| `POST`   | `/api/cars/`      | Create a car   |
-| `GET`    | `/api/cars/{id}/` | Retrieve a car |
-| `PUT`    | `/api/cars/{id}/` | Update a car   |
-| `DELETE` | `/api/cars/{id}/` | Delete a car   |
-
-**Example POST Payload**
-
-```json
-{
-  "vin": "WVWZZZ1JZXW000001",
-  "make": "Volkswagen",
-  "model": "Golf",
-  "year_of_manufacture": 2018
-}
-```
-
----
-
-## 🧩 PowerShell Scripts
-
-| Script                  | Description                                                        |
-| ----------------------- | ------------------------------------------------------------------ |
-| `scripts/setup/run.ps1` | Builds and runs the full Docker stack (auto-migrate + admin setup) |
-| `scripts/setup/db.ps1`  | Manage migrations, backups, and restores                           |
-| `scripts/seed.ps1`      | (Optional) Seed initial or test data                               |
-| `scripts/cleanup.ps1`   | Stop and remove containers and volumes                             |
-| `scripts/scheduler.ps1` | Run background tasks or policy expiry detection manually           |
-
----
-
-## 📧 MailHog
-
-MailHog captures all outbound emails for testing.
-
-* UI: [http://localhost:8025](http://localhost:8025)
-* SMTP: `mailhog:1025`
-
----
-
-## 🧹 Useful Commands
-
-**Rebuild everything:**
-
-```powershell
-.\scripts\setup\run.ps1 -Rebuild
-```
-
-**Apply migrations manually:**
-
-```powershell
-docker compose exec backend python manage.py makemigrations
+```bash
+# Apply migrations
 docker compose exec backend python manage.py migrate
-```
 
-**Django shell:**
-
-```powershell
+# Open Django shell
 docker compose exec backend python manage.py shell
-```
 
-**Check containers:**
-
-```powershell
-docker compose ps
+# Seed mock data
+docker compose exec backend python manage.py seed
 ```
 
 ---
 
-## 🧾 Environment URLs
+## 🧪 Testing
 
-| Service      | URL                                                          |
-| ------------ | ------------------------------------------------------------ |
-| Django API   | [http://localhost:8000](http://localhost:8000)               |
-| Django Admin | [http://localhost:8000/admin/](http://localhost:8000/admin/) |
-| MailHog      | [http://localhost:8025](http://localhost:8025)               |
-| PostgreSQL   | `localhost:5432`                                             |
-| Redis        | `localhost:6379`                                             |
+**Automated Testing:**
+Uses `pytest`, `pytest-django`, and `pytest-cov` for integration and coverage tests.
+Manual API testing is done with **Postman**.
 
----
+```bash
+# Run all tests
+docker compose exec backend pytest -v
 
-## 🧱 Default Database Schema
-
-| Table              | Description                                  |
-| ------------------ | -------------------------------------------- |
-| `cars_car`         | Stores vehicle data (VIN, make, model, year) |
-| `auth_user`        | Django user accounts (includes admin)        |
-| `django_session`   | Session management                           |
-| `django_admin_log` | Admin audit trail                            |
-
----
-
-## 🧠 Developer Notes
-
-* All scripts are **idempotent** — rerunning them won’t break or duplicate setup.
-* `run.ps1` auto-applies any pending model migrations at startup.
-* Admin credentials are recreated on each rebuild for consistency.
-
----
-
-## 📜 License
-
-For internal or educational use.
-Extend, fork, or deploy freely for production under your organization’s policies.
-
----
-
-## 🧾 .gitignore (Recommended)
-
+# Run tests with coverage
+docker compose exec backend pytest --cov=apps --cov-report=term-missing -v
 ```
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.pyc
-*.pdb
-*.egg-info/
 
-# Django
-db.sqlite3
-*.log
-*.pot
-*.pydevproject
-.env
-.env.local
-.env.*.local
-.vscode/
-.idea/
-media/
-staticfiles/
+---
 
-# Docker
-*.pid
-docker-compose.override.yml
+## 🧰 Factories & Seeding
 
-# OS
-.DS_Store
-Thumbs.db
+Mock data is generated using **factory_boy** and **Faker**. Seeder script:
 
-# Virtual environments
-venv/
-.env/
-.venv/
-Scripts/
+```bash
+docker compose exec backend python manage.py seed
+```
+---
+
+## 🖼️ Application Previews
+
+###  Insurance Policies in PostgreSQL  
+A direct SQL view from the **`insurance_policy`** table showing registered policies, start and end dates, and logged expirations.  
+
+![Insurance Policies](media/db_insurance_policies.png)
+
+---
+
+###  JSON Logging (Production Mode)  
+Demonstrates **structured logging** via `structlog`, where logs are output in JSON format. 
+
+![JSON Logs](media/json_logs.png)
+
+---
+
+###  Live Development Logs  
+Console output in **development mode (`ENV=dev`)**, showcasing real-time API request tracking and system events.  
+
+![Development Logs](media/logs.png)
+
+---
+
+###  Policy Expiry Scheduler  
+Logs generated by the **APScheduler background job**, automatically detecting and updating expired policies in the system.  
+
+![Policy Expiry Logs](media/log_policy_expiry.png)
+
+---
+
