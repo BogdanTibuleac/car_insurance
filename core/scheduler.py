@@ -37,6 +37,6 @@ def start_scheduler():
     Starts the background scheduler to run periodic tasks.
     """
     scheduler = BackgroundScheduler(timezone="Europe/Bucharest")
-    scheduler.add_job(log_policy_expirations, trigger = 'interval', minutes = 1, next_run_time=now(), id="log_policy_expirations_job", replace_existing=True)
+    scheduler.add_job(log_policy_expirations, trigger = 'interval', minutes = 1440, next_run_time=now(), id="log_policy_expirations_job", replace_existing=True)
     scheduler.start()
     logger.info("Background scheduler started.")    

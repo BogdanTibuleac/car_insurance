@@ -31,7 +31,6 @@ def test_create_policy_success(auth_client):
 def test_create_policy_validation_error(auth_client):
     car = CarFactory()
     payload = {"provider": "Groupama", "start_date": "2025-12-31", "end_date": "2025-01-01"}
-
     response = auth_client.post(f"/api/cars/{car.id}/policies/", payload, format="json")
     # either 400 (if validated by serializer) or 500 (if DB constraint is triggered)
     assert response.status_code in [400, 500]

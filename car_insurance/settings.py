@@ -177,16 +177,21 @@ shared_processors = [
 ]
 
 if ENV == "prod":
-    processors = shared_processors + [
-        structlog.processors.JSONRenderer(),
-    ]
+    renderer = structlog.processors.JSONRenderer()
 else:
-    processors = shared_processors + [
-        structlog.dev.ConsoleRenderer(colors=True),
-    ]
+    renderer = structlog.dev.ConsoleRenderer(colors=True)
+
+shared_processors = [
+    structlog.contextvars.merge_contextvars,
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.stdlib.add_log_level,
+    structlog.stdlib.PositionalArgumentsFormatter(),
+    structlog.processors.StackInfoRenderer(),
+    structlog.processors.format_exc_info,
+]
 
 structlog.configure(
-    processors=processors,
+    processors=shared_processors + [renderer],
     wrapper_class=structlog.make_filtering_bound_logger(numeric_log_level),
     context_class=dict,
     logger_factory=structlog.stdlib.LoggerFactory(),
@@ -197,15 +202,16 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "structlog_json": {
+        "structlog": {
             "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.JSONRenderer(),
+            "processor": renderer,  # Use the same renderer here
+            "foreign_pre_chain": shared_processors,  # match structlog pipeline
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "structlog_json",   # ✅ no trailing comma here
+            "formatter": "structlog",
         },
     },
     "root": {
@@ -213,7 +219,7 @@ LOGGING = {
         "level": LOG_LEVEL,
     },
     "loggers": {
-        "django.server": {                   # ✅ formats Django's access logs
+        "django.server": {
             "handlers": ["console"],
             "level": LOG_LEVEL,
             "propagate": False,
