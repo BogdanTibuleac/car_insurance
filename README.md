@@ -153,8 +153,23 @@ docker compose exec backend python manage.py shell
 
 # Seed mock data
 docker compose exec backend python manage.py seed
-```
 
+# Delete data
+docker compose exec backend python manage.py flush --no-input
+```
+---
+### ✔ Import Sorting (isort)
+
+Use isort to keep your Python imports clean and consistent across the project.
+
+```bash
+# Check if imports are correctly sorted
+docker compose exec backend isort . --check-only
+
+# Automatically sort and fix imports
+docker compose exec backend isort .
+
+```
 ---
 
 ## 🧪 Testing
