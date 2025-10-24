@@ -1,7 +1,7 @@
 import pytest
+from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.test import APIClient
-from django.contrib.auth.models import User
 
 from apps.cars.factories import CarFactory
 from apps.policies.factories import InsurancePolicyFactory

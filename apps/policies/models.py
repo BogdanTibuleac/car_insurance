@@ -1,8 +1,9 @@
 from django.db import models
-from apps.cars.models import Car
 from django.utils import timezone
 
-# Create your models here.
+from apps.cars.models import Car
+
+
 class InsurancePolicy(models.Model):
     car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='policies')
     provider = models.CharField(max_length=100, blank = True, null = True)

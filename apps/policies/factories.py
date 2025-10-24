@@ -1,8 +1,10 @@
-import factory
-from apps.policies.models import InsurancePolicy
-from django.utils import timezone
-from datetime import timedelta
 import random
+from datetime import timedelta
+
+import factory
+from django.utils import timezone
+
+from apps.policies.models import InsurancePolicy
 
 PROVIDERS = ["Allianz", "Groupama", "Omniasig", "Generali", "AXA"]
 

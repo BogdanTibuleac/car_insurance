@@ -1,5 +1,7 @@
 from django.db import models
+
 from apps.cars.models import Car
+
 
 class Claim(models.Model):
     car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name="claims")

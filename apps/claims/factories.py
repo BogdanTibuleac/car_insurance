@@ -1,8 +1,10 @@
+import random
+from datetime import timedelta
+
 import factory
 from django.utils import timezone
-from datetime import timedelta
 from faker import Faker
-import random
+
 from apps.claims.models import Claim
 
 # --- realistic mock data providers ---

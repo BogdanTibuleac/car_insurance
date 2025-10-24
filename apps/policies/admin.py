@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import InsurancePolicy, InsuranceExpiryLog
+
+from .models import InsuranceExpiryLog, InsurancePolicy
+
 # Register your models here.
 
 @admin.register(InsurancePolicy)

@@ -5,12 +5,14 @@ Customized for Docker development environment
 (PostgreSQL, Redis, MailHog).
 """
 
-import os
-import environ
-from pathlib import Path
-from datetime import timedelta
-import structlog
 import logging
+import os
+from datetime import timedelta
+from pathlib import Path
+
+import environ
+import structlog
+
 # ---------------------------------------------------------------------------
 
 # Base directory
@@ -149,6 +151,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",  # your default
     ),
+    'DEFAULT_PAGINATION_CLASS': 'core.pagination.StandardResultsSetPagination',
 }
 
 
@@ -226,3 +229,4 @@ LOGGING = {
         },
     },
 }
+

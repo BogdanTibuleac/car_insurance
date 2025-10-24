@@ -1,10 +1,10 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from django.utils.timezone import localdate, now
-from django.db import transaction
 #import logging
 import structlog
+from apscheduler.schedulers.background import BackgroundScheduler
+from django.db import transaction
+from django.utils.timezone import localdate, now
 
-from apps.policies.models import InsurancePolicy, InsuranceExpiryLog
+from apps.policies.models import InsuranceExpiryLog, InsurancePolicy
 
 #logger = logging.getLogger(__name__)
 logger = structlog.get_logger()

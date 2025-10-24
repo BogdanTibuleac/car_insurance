@@ -1,7 +1,9 @@
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
 import datetime
+
+from django.contrib.auth.models import User
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
 
 class Car(models.Model):
     vin = models.CharField(max_length=17, unique=True)

@@ -1,8 +1,11 @@
-import factory
-from faker import Faker
-from apps.cars.models import Car
-from django.contrib.auth.models import User
 import random
+
+import factory
+from django.contrib.auth.models import User
+from faker import Faker
+
+from apps.cars.models import Car
+
 MAKES_MODELS = {
     "BMW": ["X5", "X3", "320i"],
     "Volkswagen": ["Golf", "Passat", "Tiguan"],

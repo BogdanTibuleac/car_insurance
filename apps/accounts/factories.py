@@ -1,6 +1,7 @@
 import factory
 from django.contrib.auth.models import User
 
+
 class UserFactory(factory.django.DjangoModelFactory):
     """
     Factory for creating Django built-in User objects.
