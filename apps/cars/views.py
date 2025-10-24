@@ -97,10 +97,15 @@ class CarService:
 # ===============================================================
 # 🎯 CONTROLLER LAYER (DRF VIEWSET)
 # ===============================================================
-
 class CarViewSet(viewsets.ModelViewSet):
     queryset = Car.objects.all()
     serializer_class = CarSerializer
+
+    def perform_create(self, serializer):
+        """
+        Automatically assign the logged-in user as the owner when creating a car.
+        """
+        serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=["post"], url_path="policies")
     def create_policy(self, request, pk=None):

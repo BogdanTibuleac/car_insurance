@@ -16,3 +16,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class AccountSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for embedding user details (read-only)."""
+    class Meta:
+        model = User
+        fields = ["id", "username", "email"]

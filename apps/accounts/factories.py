@@ -1,15 +1,20 @@
 import factory
 from django.contrib.auth.models import User
+from faker import Faker
+
+fake = Faker()
 
 
 class UserFactory(factory.django.DjangoModelFactory):
     """
-    Factory for creating Django built-in User objects.
-    Used for tests or seeding demo data.
+    Factory for creating realistic Django User objects
+    with human-like names and matching emails.
     """
     class Meta:
         model = User
 
-    username = factory.Faker("user_name")
-    email = factory.Faker("email")
-    password = factory.PostGenerationMethodCall("set_password", "test1234")  # hashed password
+    first_name = factory.LazyAttribute(lambda _: fake.first_name())
+    last_name = factory.LazyAttribute(lambda _: fake.last_name())
+    username = factory.LazyAttribute(lambda o: f"{o.first_name.lower()}.{o.last_name.lower()}")
+    email = factory.LazyAttribute(lambda o: f"{o.first_name.lower()}.{o.last_name.lower()}@example.com")
+    password = factory.PostGenerationMethodCall("set_password", "Test1234!")
