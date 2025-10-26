@@ -115,7 +115,7 @@ docker compose up --build
 ### 🗄️ Database Access
 
 ```bash
-docker exec -it car_insurance_db psql -U car_admin -d car_insurance
+docker exec -it car_insurance_db psql -U <POSTGRES_USER> -d car_insurance
 ```
 
 Inside psql:
